@@ -17,6 +17,7 @@ namespace RIG
 {
     public partial class Form1 : Form
     {
+        //initialize spech recognition engine
         SpeechRecognitionEngine recEngine = new SpeechRecognitionEngine();
         //SpeechRecognizer recEngine = new SpeechRecognizer();
 
@@ -27,12 +28,15 @@ namespace RIG
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            //LoadGrammar function for easier code reading
             LoadGrammar();
 
+            //speech recognition configuration
             recEngine.SetInputToDefaultAudioDevice();
             recEngine.SpeechRecognized += RecEngine_SpeechRecognized;
         }
 
+        //search button
         private void button1_Click(object sender, EventArgs e)
         {
             pictureBox1.Image = null;
@@ -57,6 +61,7 @@ namespace RIG
             }
         }
 
+        //download button
         private void button2_Click(object sender, EventArgs e)
         {
             if (pictureBox1.Image == null || pictureBox1 == null)
@@ -64,10 +69,12 @@ namespace RIG
 
             else
             {
+                //custom file location saving with save file dialog
                 SaveFileDialog sfd = new SaveFileDialog();
                 sfd.Filter = "jpg|*.jpg|bmp|*.bmp|gif|*.gif";
                 ImageFormat format = ImageFormat.Jpeg;
 
+                //formats
                 if (sfd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 {
                     string ext = System.IO.Path.GetExtension(sfd.FileName);
@@ -86,12 +93,14 @@ namespace RIG
                 }
                 string filePath = sfd.FileName.ToString();
 
+                //temp image storing because of memory stream
                 Image tmp = pictureBox1.Image;
                 tmp.Save(filePath);
                 sfd.Dispose();
             }
         }
 
+        //turns byte array into image(seperate function because of memory stream)
         private Image toImage(byte[] rawImage)
         {
             pictureBox1.Image = null;
@@ -99,6 +108,7 @@ namespace RIG
             return Image.FromStream(stream);
         }
 
+        //html code fetch and query
         private string GetHtmlCode(string text)
         {
 
@@ -123,6 +133,7 @@ namespace RIG
             return data;
         }
 
+        //generate image urls
         private List<string> GetUrls(string html)
         {
             var urls = new List<string>();
@@ -141,6 +152,7 @@ namespace RIG
             return urls;
         }
 
+        //get image in form of bytes
         private byte[] GetImage(string url)
         {
             var ctr = 0;
@@ -177,11 +189,13 @@ namespace RIG
             return null;
         }
         
+        //speech recognition to text box
         private void RecEngine_SpeechRecognized(object sender, SpeechRecognizedEventArgs e)
         {
             textBox1.Text = e.Result.Text.ToString();
         }
 
+        //loads grammar for speechRec from local .txt file
         private void LoadGrammar()
         {
             Choices texts = new Choices();
@@ -195,6 +209,7 @@ namespace RIG
             recEngine.LoadGrammarAsync(diction);*/
         }
 
+        //speech recognition toggle
         private void checkBox1_CheckedChanged(object sender, EventArgs e)
         {
             if (checkBox1.Checked)
