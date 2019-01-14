@@ -179,9 +179,6 @@ namespace RIG
         
         private void RecEngine_SpeechRecognized(object sender, SpeechRecognizedEventArgs e)
         {
-            if (e.Result.Text.ToString() == "delete" || e.Result.Text.ToString() == "Delete")
-                textBox1.Text = "";
-
             textBox1.Text = e.Result.Text.ToString();
         }
 
