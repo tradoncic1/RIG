@@ -10,14 +10,27 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Speech.Recognition;
+using System.Diagnostics;
 
 namespace RIG
 {
     public partial class Form1 : Form
     {
+        SpeechRecognitionEngine recEngine = new SpeechRecognitionEngine();
+        //SpeechRecognizer recEngine = new SpeechRecognizer();
+
         public Form1()
         {
             InitializeComponent();
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            LoadGrammar();
+
+            recEngine.SetInputToDefaultAudioDevice();
+            recEngine.SpeechRecognized += RecEngine_SpeechRecognized;
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -42,13 +55,6 @@ namespace RIG
 
                 //pictureBox1.SizeMode = PictureBoxSizeMode.StretchImage;
             }
-        }
-
-        private Image toImage(byte[] rawImage)
-        {
-            pictureBox1.Image = null;
-            var stream = new MemoryStream(rawImage);
-            return Image.FromStream(stream);
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -84,6 +90,13 @@ namespace RIG
                 tmp.Save(filePath);
                 sfd.Dispose();
             }
+        }
+
+        private Image toImage(byte[] rawImage)
+        {
+            pictureBox1.Image = null;
+            var stream = new MemoryStream(rawImage);
+            return Image.FromStream(stream);
         }
 
         private string GetHtmlCode(string text)
@@ -130,23 +143,68 @@ namespace RIG
 
         private byte[] GetImage(string url)
         {
-            var request = (HttpWebRequest)WebRequest.Create(url);
-            var response = (HttpWebResponse)request.GetResponse();
+            var ctr = 0;
 
-            using (Stream dataStream = response.GetResponseStream())
+            while (ctr < 5)
             {
-                if (dataStream == null)
-                    return null;
-                using (var sr = new BinaryReader(dataStream))
+                try
                 {
-                    byte[] bytes = sr.ReadBytes(100000000);
+                    var request = (HttpWebRequest)WebRequest.Create(url);
+                    var response = (HttpWebResponse)request.GetResponse();
 
-                    return bytes;
+                    using (Stream dataStream = response.GetResponseStream())
+                    {
+                        if (dataStream == null)
+                            return null;
+
+                        using (var sr = new BinaryReader(dataStream))
+                        {
+                            byte[] bytes = sr.ReadBytes(100000000);
+
+                            return bytes;
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    ctr++;
+                    System.Threading.Thread.Sleep(250);
+                    continue;
                 }
             }
+            
 
             return null;
         }
+        
+        private void RecEngine_SpeechRecognized(object sender, SpeechRecognizedEventArgs e)
+        {
+            if (e.Result.Text.ToString() == "delete" || e.Result.Text.ToString() == "Delete")
+                textBox1.Text = "";
 
+            textBox1.Text = e.Result.Text.ToString();
+        }
+
+        private void LoadGrammar()
+        {
+            Choices texts = new Choices();
+            string[] lines = File.ReadAllLines(Environment.CurrentDirectory + "\\dictionary.txt");
+            texts.Add(lines);
+            GrammarBuilder gb = new GrammarBuilder();
+            gb.Append(texts);
+            Grammar wordList = new Grammar(gb);
+            recEngine.LoadGrammarAsync(wordList);
+            /*DictationGrammar diction = new DictationGrammar();
+            recEngine.LoadGrammarAsync(diction);*/
+        }
+
+        private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        {
+            if (checkBox1.Checked)
+                recEngine.RecognizeAsync(RecognizeMode.Multiple);
+
+            else
+                recEngine.RecognizeAsyncStop();
+        }
     }
 }
